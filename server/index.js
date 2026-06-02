@@ -10,6 +10,7 @@ import { Readable } from 'stream'
 import { google } from 'googleapis'
 import { createClient } from '@supabase/supabase-js'
 import { v2 as cloudinary } from 'cloudinary'
+import storage from './storage/index.js'
 
 dotenv.config()
 
@@ -27,7 +28,7 @@ const LOGIN_PASSWORD = String(
 const AUTH_TOKEN_SECRET = String(
   process.env.AUTH_TOKEN_SECRET || 'deepwoods-change-this-secret',
 )
-const STORAGE_PROVIDER = String(process.env.STORAGE_PROVIDER || 'supabase')
+const STORAGE_PROVIDER = String(process.env.STORAGE_PROVIDER || 'google-drive')
   .trim()
   .toLowerCase()
 const AUTH_TOKEN_TTL_MS = 12 * 60 * 60 * 1000
@@ -517,64 +518,7 @@ function getUploadProviderOrder() {
 }
 
 async function uploadWithConfiguredProvider(file, companyName, tabKey) {
-  const providerOrder = getUploadProviderOrder()
-  const providerErrors = []
-
-  for (const provider of providerOrder) {
-    try {
-      if (provider === 'supabase') {
-        if (!hasSupabaseConfig()) {
-          providerErrors.push(
-            'Supabase is selected but SUPABASE_URL, SUPABASE_ANON_KEY, or SUPABASE_BUCKET is missing.',
-          )
-          continue
-        }
-
-        const result = await uploadToSupabase(file, companyName, tabKey)
-        if (result) {
-          return result
-        }
-      }
-
-      if (provider === 'google-drive') {
-        if (!hasGoogleDriveConfig()) {
-          providerErrors.push(
-            'Google Drive is selected but GOOGLE_SERVICE_ACCOUNT_JSON or GOOGLE_DRIVE_FOLDER_ID is missing.',
-          )
-          continue
-        }
-
-        const result = await uploadToGoogleDrive(file, companyName, tabKey)
-        if (result) {
-          return result
-        }
-      }
-
-      if (provider === 'cloudinary') {
-        if (!hasCloudinaryConfig()) {
-          providerErrors.push(
-            'Cloudinary is selected but CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, or CLOUDINARY_API_SECRET is missing.',
-          )
-          continue
-        }
-
-        const result = await uploadToCloudinary(file, companyName, tabKey)
-        if (result) {
-          return result
-        }
-      }
-
-      if (!['supabase', 'google-drive', 'cloudinary'].includes(provider)) {
-        providerErrors.push(
-          `Unsupported STORAGE_PROVIDER value: ${provider}. Use supabase, google-drive, cloudinary, or auto.`,
-        )
-      }
-    } catch (error) {
-      providerErrors.push(`${provider}: ${error.message || 'Upload failed.'}`)
-    }
-  }
-
-  throw new Error(providerErrors.join(' | '))
+  return await storage.upload(file, companyName, tabKey)
 }
 
 app.get('/api/health', (_req, res) => {
