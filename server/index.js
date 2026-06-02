@@ -173,14 +173,24 @@ function requireAuth(req, res, next) {
 }
 
 function getServiceAccountConfig() {
-  const raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON
+  let raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON
   if (!raw) {
     return null
   }
 
+  raw = raw.trim()
+  if (raw.startsWith('GOOGLE_SERVICE_ACCOUNT_JSON=')) {
+    raw = raw.substring('GOOGLE_SERVICE_ACCOUNT_JSON='.length).trim()
+  }
+
   try {
-    return JSON.parse(raw)
-  } catch {
+    const parsed = JSON.parse(raw)
+    if (parsed && typeof parsed.private_key === 'string') {
+      parsed.private_key = parsed.private_key.replace(/\\n/g, '\n')
+    }
+    return parsed
+  } catch (err) {
+    console.error('Failed to parse GOOGLE_SERVICE_ACCOUNT_JSON:', err.message)
     return null
   }
 }
