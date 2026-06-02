@@ -22,7 +22,7 @@ These are configurable through APP_LOGIN_EMAIL and APP_LOGIN_PASSWORD.
 - Frontend: React + Vite
 - Backend: Node.js + Express
 - Upload handling: Multer
-- Storage: Supabase Storage, Google Drive, Cloudinary
+- Storage: Supabase Storage, Optional(Google Drive, Cloudinary)
 - Logging: Google Sheets API
 
 ## Storage Strategy
